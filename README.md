@@ -11,3 +11,5 @@ _打开软件可以搜索自己想要搜索的博主_
 _界面的截图我就都放在这里了_
 ![2](https://github.com/user-attachments/assets/57fc556c-c081-4208-ba4a-13bff3701b79)
 ![3](https://github.com/user-attachments/assets/65387a25-4f38-40cb-9c9c-582b5557a8a8)
+
+**如果该项目对你有所帮助，请帮忙star一下，感谢！**
