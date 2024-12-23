@@ -1,16 +1,11 @@
 import json
 import re
-import subprocess
-import time
-import urllib.parse
 import requests
+
 from my_pack.basic_functions import get_signature, get_web_id, get_cookie, get_token
 from my_pack.field import SearchChannelType
 
 first_rid = None
-
-
-
 
 def headers_all():
     headers = {
@@ -162,7 +157,9 @@ def search_users(offset=0, keyword='', rid=None):
     params = get_signature(params=user_search())
 
     params['offset'] = offset
+    print(f"使用关键字搜索: {params['keyword']}")
     params['keyword'] = keyword
+    print(f"Searching with keyword: {params['keyword']}")
 
     if rid is not None:
         params['rid'] = rid
@@ -184,17 +181,15 @@ def search_users(offset=0, keyword='', rid=None):
     for user in json_search.get('user_list', []):
         user_data = {
             'nickname': user['user_info']['nickname'],
-            'avatar_thumb': user['user_info']['avatar_thumb']['url_list'][0],
             'sec_uid': user['user_info']['sec_uid'],
             'uid': user['user_info']['uid'],
             'unique_id': user['user_info']['unique_id'],
             'signature': user['user_info']['signature'],
         }
 
-        # 认证
         account_cert_info = user['user_info'].get('account_cert_info', '')
         match = re.search(r'"label_text":"(.*?)"', account_cert_info)
-        user_data['account_cert_info'] = match.group(1) if match else ""
+        user_data['account_cert_info'] = match.group(1) if match else "未认证"
 
         user_info.append(user_data)
 
@@ -322,116 +317,3 @@ def comments_level2(item_id, comment_id, cursor_level2, count_level2):
         'fp': 'verify_lzz3t10y_QJ3e5YRU_KHiu_4aZy_BlEd_1TW0RKstScjZ',
     }
     return params
-
-
-def get_user_videos(sec_uid, max_cursor=0, count=20):
-    try:
-        def run_js_hidden(js_code):
-            return subprocess.Popen(
-                ["node", "-e", js_code],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                creationflags=subprocess.CREATE_NO_WINDOW,
-                text=True
-            ).communicate()[0]
-
-        def call_js_function(js_code, function_name, *args):
-            args_str = ", ".join([f"'{arg}'" if isinstance(arg, str) else str(arg) for arg in args])
-            wrapped_js_code = f"""
-                    {js_code}
-                    console.log({function_name}({args_str}));
-                    """
-            return run_js_hidden(wrapped_js_code).strip()
-        params = {
-            'sec_user_id': sec_uid,
-            'count': count,
-            'max_cursor': max_cursor,
-            'aid': '6383',
-            'cookie_enabled': 'true',
-            'platform': 'PC',
-            'downlink': '10'
-        }
-
-        query = '&'.join([f'{k}={urllib.parse.quote(str(v))}' for k, v in params.items()])
-        a_bogus = call_js_function('sign_datail', query, headers_all()["user-agent"])
-        params["a_bogus"] = a_bogus
-        response = requests.get(
-            url='https://www.douyin.com/aweme/v1/web/aweme/post/',
-            params=params,
-            cookies=get_cookie(),
-            headers=headers_all()
-        )
-        data = response.json()
-        if data.get('status_code') != 0:
-            raise Exception(data.get('status_msg', '获取视频列表失败'))
-            
-        videos = []
-        for item in data.get('aweme_list', []):
-            media_type = "图集" if item.get('images') else "视频"
-
-            if media_type == "视频":
-                media_url = item['video'].get('play_addr', {}).get('url_list', [''])[0]
-            else:
-                image_urls = [img.get('url_list', [''])[0] for img in item.get('images', [])]
-                media_url = ' | '.join(image_urls)
-            
-            video = {
-                'aweme_id': item.get('aweme_id', ''),
-                'author': {
-                    'nickname': item['author'].get('nickname', '')
-                },
-                'media_type': media_type,
-                'media_url': media_url,
-                'desc': item.get('desc', ''),
-                'create_time': time.strftime(
-                    '%Y-%m-%d %H:%M:%S',
-                    time.localtime(item.get('create_time', 0))
-                ),
-                'music': {
-                    'title': item.get('music', {}).get('title', '无音乐')
-                },
-                'duration': item.get('duration', 0),
-                'statistics': {
-                    'digg_count': item['statistics'].get('digg_count', 0),
-                    'comment_count': item['statistics'].get('comment_count', 0),
-                    'collect_count': item['statistics'].get('collect_count', 0),
-                    'share_count': item['statistics'].get('share_count', 0)
-                }
-            }
-            videos.append(video)
-            
-        return (
-            videos,
-            data.get('has_more', False),
-            data.get('max_cursor', 0)
-        )
-        
-    except Exception as e:
-        print(f"获取视频列表失败: {str(e)}")
-        raise
-
-
-def search_videos(keyword, offset=0, impr_id=None):
-    params = user_search()
-    params['search_channel'] = SearchChannelType.VIDEO.value
-    params['offset'] = offset
-    params['keyword'] = keyword
-
-    if offset > 0:
-        params['need_filter_settings'] = 0
-        params['search_id'] = impr_id
-
-    params = get_signature(params)
-
-    response = requests.get(
-        'https://www.douyin.com/aweme/v1/web/search/item',
-        params=params,
-        cookies=get_cookie(),
-        headers=headers_all()
-    )
-
-    json_data = response.json()
-    new_impr_id = json_data['log_pb']['impr_id']
-    
-    return json_data['data'], new_impr_id
