@@ -137,7 +137,6 @@ def on_get_50_more():
     # print(users)
 
 
-# 用户信息
 def user_message_search(sec_uid):
     import execjs
     DOUYIN_SIGN = execjs.compile(js_code)
@@ -163,7 +162,6 @@ def show_user_info(selected_item, sec_uid):
     if current_bubble is not None:
         current_bubble.destroy()
 
-    # 获取选中的行
     # selected_item = treeview.selection()
     if selected_item:
         user_data = user_message_search(sec_uid)
@@ -260,14 +258,12 @@ def copy_media_url():
         messagebox.showwarning("未选择行", "请先选择一行再试")
 
 
-# 清空表格内容的函数
 @threaded
 def clear_treeview():
     for i in tree_user_video.get_children():
         tree_user_video.delete(i)
 
 
-# 保存数据到 Excel 文件
 def save_to_excel():
     file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
     if file_path:
@@ -275,15 +271,12 @@ def save_to_excel():
         ws = wb.active
         ws.title = "抖音视频信息"
 
-        # 写入表头
         ws.append(columns)
 
-        # 写入数据
         for item in tree_user_video.get_children():
             row = tree_user_video.item(item)["values"]
             ws.append(row)
 
-        # 保存文件
         wb.save(file_path)
         messagebox.showinfo("保存成功", f"数据已保存到 {file_path}")
 
@@ -597,7 +590,6 @@ def tree_comments_level2(mode='first'):
         params = comments_level2(item_id=aweme_id, comment_id=comment_uid, cursor_level2=cursor_level2,
                                  count_level2=count_level2)
 
-        # 动态添加 whale_cut_token
         if mode in ['more', 'all']:
             params['whale_cut_token'] = ""
 
