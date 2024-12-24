@@ -32,31 +32,21 @@ subprocess.Popen = partial(subprocess.Popen, encoding='utf-8', creationflags=sub
 def get_signature(params):
     import execjs
     DOUYIN_SIGN = execjs.compile(js_code)
-
     query = '&'.join([f'{k}={urllib.parse.quote(str(v))}' for k, v in params.items()])
-
     a_bogus = DOUYIN_SIGN.call('sign_reply', query, HEADERS)
-
     params["a_bogus"] = a_bogus
-
     return params
-
-
 
 
 
 def get_web_id():
     def e(t):
-
         if t is not None:
-
             return str(t ^ (int(16 * random.random()) >> (t // 4)))
         else:
-
             return ''.join(
                 [str(int(1e7)), '-', str(int(1e3)), '-', str(int(4e3)), '-', str(int(8e3)), '-', str(int(1e11))]
             )
-
     web_id = ''.join(
         e(int(x)) if x in '018' else x for x in e(None)
     )
@@ -65,55 +55,37 @@ def get_web_id():
 
 async def async_login_and_save_cookies():
     async with async_playwright() as p:
-
         browser = await p.chromium.launch(headless=False)
         context = await browser.new_context()
-
         page = await context.new_page()
         await page.goto("https://www.douyin.com/user/self")
-
-        print("请扫描二维码登录...")
         try:
-
             await page.wait_for_selector("text=登录成功", timeout=30000)
-            print("登录成功")
         except Exception as e:
-            print("登录失败或超时")
             await browser.close()
             raise e
-
         xmst_value = await page.evaluate("window.localStorage.getItem('xmst');")
         print(f"xmst: {xmst_value}")
-
         with open('token.ini', 'w') as f:
             f.write("token = {\n")
             f.write(f"    'xmst': '{xmst_value}',\n")
             f.write("}\n")
-
         time.sleep(10)
-
         cookies = await context.cookies()
         cookies_dict = {cookie['name']: cookie['value'] for cookie in cookies}
-
         with open('ck.ini', 'w') as f:
             f.write("cookies = {\n")
             for key, value in cookies_dict.items():
                 f.write(f"    '{key}': '{value}',\n")
             f.write("}\n")
-
-        print("Cookies 已保存到 ck.ini 文件中")
-
         await browser.close()
-
         return xmst_value
 
 
 def get_cookie():
     with open('./ck.ini', 'r') as file:
         data = file.read()
-
     cookies_str = data.strip().replace("cookies =", "").strip()
-
     cookies = eval(cookies_str)
     return cookies
 
@@ -121,8 +93,6 @@ def get_cookie():
 def get_token():
     with open('./token.ini', 'r') as file:
         data = file.read()
-
     token_str = data.strip().replace("token =", "").strip()
-
     token = eval(token_str)
     return token
