@@ -2,12 +2,10 @@ from threading import Thread
 import datetime
 
 
-# 多线程装饰器
 def threaded(func):
     def wrapper(*args, **kwargs):
         thread = Thread(target=func, args=args, kwargs=kwargs)
         thread.start()
-
     return wrapper
 
 
@@ -19,7 +17,6 @@ def center_window(window, width, height):
     window.geometry(f'{width}x{height}+{int(x)}+{int(y)}')
 
 
-# 时间戳转换
 def convert_timestamp_to_datetime(timestamp):
     dt = datetime.datetime.fromtimestamp(timestamp)
     formatted_time = dt.strftime('%Y-%m-%d %H:%M:%S')
